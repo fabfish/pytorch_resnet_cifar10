@@ -343,7 +343,7 @@ class LRFinder(object):
             # Check if the loss has diverged; if it has, stop the test
             self.history["loss"].append(loss)
             if loss > diverge_th * self.best_loss:
-                print("Stopping early, the loss has diverged.")
+                print("\nStopping early, the loss has diverged.")
                 # break
 
         print("Learning rate search finished. See the graph with {finder_name}.plot()")
