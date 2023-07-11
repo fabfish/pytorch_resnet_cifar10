@@ -6,6 +6,7 @@ from tqdm.autonotebook import tqdm
 from torch.optim.lr_scheduler import _LRScheduler
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+import warnings
 
 from packaging import version
 
@@ -362,7 +363,9 @@ class LRFinder(object):
     def _check_for_scheduler(self):
         for param_group in self.optimizer.param_groups:
             if "initial_lr" in param_group:
-                raise RuntimeError("Optimizer already has a scheduler attached to it")
+                # raise RuntimeError("Optimizer already has a scheduler attached to it")
+                # raise RuntimeWarning("Optimizer already has a scheduler attached to it")
+                warnings.warn("Optimizer already has a scheduler attached to it")
 
     def _train_batch(self, train_iter, accumulation_steps, non_blocking_transfer=True):
         self.model.train()

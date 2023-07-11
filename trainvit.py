@@ -166,8 +166,22 @@ class TrainEval:
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
+            if t % 100 == 0:
+                if self.lr_scheduler is not None:
+                    scheduler_backup = self.lr_scheduler
+                    self.lr_scheduler = None
+
+                    if self.lrfinder is True:
+                        lr_finder = LRFinder(self.model, self.optimizer, self.criterion, self.device)
+                        lr_finder.range_test(train_loader=self.train_dataloader, start_lr = 0.001, end_lr=0.02, num_iter=100, step_mode="linear")
+                        lr = lr_finder.plot(log_lr=False, suggest_lr=True)
+                        lr_finder.reset()
+
+                    # self.lr_scheduler = scheduler_backup
+                    self.lr_scheduler = CyclicLR(self.optimizer, base_lr=lr * 0.25, max_lr=lr, cycle_momentum=False)
+
             total_loss += loss.item()
-            tk.set_postfix({"Loss": "%6f" % float(total_loss / (t + 1))})
+            tk.set_postfix({"Loss": "%6f" % float(total_loss / (t + 1)), "lr": self.optimizer.param_groups[0]['lr']})
             if self.args.dry_run:
                 break
 
@@ -197,18 +211,20 @@ class TrainEval:
         best_train_loss = np.inf
         for i in range(self.epoch):
 
-            if self.lrfinder is True:
-                lr_finder = LRFinder(self.model, self.optimizer, self.criterion, self.device)
-                lr_finder.range_test(train_loader=self.train_dataloader, start_lr = 0.001, end_lr=0.5, num_iter=100, step_mode="linear")
-                lr = lr_finder.plot(log_lr=False, suggest_lr=True)
-                lr_finder.reset()
+            # if self.lrfinder is True:
+            #     lr_finder = LRFinder(self.model, self.optimizer, self.criterion, self.device)
+            #     lr_finder.range_test(train_loader=self.train_dataloader, start_lr = 0.001, end_lr=1, num_iter=100, step_mode="linear")
+            #     lr = lr_finder.plot(log_lr=False, suggest_lr=True)
+            #     lr_finder.reset()
 
-                if self.lion:
-                    self.lr_scheduler = CyclicLR(self.optimizer, base_lr=lr * 0.25, max_lr=lr, cycle_momentum=False) 
-                else:
-                    self.lr_scheduler = CyclicLR(self.optimizer, base_lr=lr * 0.25, max_lr=lr, cycle_momentum=False)
-            else:
-                self.lr_scheduler = None
+            #     if self.lion:
+            #         self.lr_scheduler = CyclicLR(self.optimizer, base_lr=lr * 0.25, max_lr=lr, cycle_momentum=False) 
+            #     else:
+            #         self.lr_scheduler = CyclicLR(self.optimizer, base_lr=lr * 0.25, max_lr=lr, cycle_momentum=False)
+            # else:
+            #     self.lr_scheduler = CyclicLR(self.optimizer, base_lr=0.01 * 0.25, max_lr=0.01, cycle_momentum=False)
+
+            self.lr_scheduler = CyclicLR(self.optimizer, base_lr=0.01 * 0.25, max_lr=0.01, cycle_momentum=False)
 
             train_loss = self.train_fn(i)
             val_loss = self.eval_fn(i)
@@ -271,7 +287,7 @@ def main():
     # fish: customized args
     parser.add_argument('--eva', default=True, type=bool, 
                         help='Use the eva for preconditioning')
-    parser.add_argument('--lrfinder', default=True, type=bool,
+    parser.add_argument('--lrfinder', action='store_true', default=False,
                         help='Use the lrfinder')
     parser.add_argument('--clr', default=True, type=bool,
                         help='Use the clr learning rate schedule')
@@ -308,7 +324,7 @@ def main():
         preconditioner = Eva(model,)
 
     # lr_finder = LRFinder(model, optimizer, criterion, device)
-    # lr_finder.range_test(train_loader=train_loader, start_lr = 0.001, end_lr=0.5, num_iter=100, step_mode="linear")
+    # lr_finder.range_test(train_loader=train_loader, start_lr = 0.01, end_lr=0.5, num_iter=10, step_mode="linear")
     # lr = lr_finder.plot(log_lr=False, suggest_lr=True)
     # lr_finder.reset()
     # print(lr)
