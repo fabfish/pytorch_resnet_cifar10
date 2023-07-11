@@ -269,13 +269,13 @@ def main():
                         help='quickly check a single pass')
     
     # fish: customized args
-    parser.add_argument('--eva', default=True, type=bool, 
+    parser.add_argument('--eva', action = 'store_true', 
                         help='Use the eva for preconditioning')
     parser.add_argument('--lrfinder', default=True, type=bool,
                         help='Use the lrfinder')
     parser.add_argument('--clr', default=True, type=bool,
                         help='Use the clr learning rate schedule')
-    parser.add_argument('--lion', default=False, type=bool,
+    parser.add_argument('--lion', action = 'store_true', 
                         help='Use the lion optimizer',)
 
     args = parser.parse_args()
@@ -306,6 +306,8 @@ def main():
 
     if args.eva:
         preconditioner = Eva(model,)
+    else:
+        preconditioner = None
 
     # lr_finder = LRFinder(model, optimizer, criterion, device)
     # lr_finder.range_test(train_loader=train_loader, start_lr = 0.001, end_lr=0.5, num_iter=100, step_mode="linear")
